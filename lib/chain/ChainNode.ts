@@ -24,15 +24,15 @@ export class ChainNode {
   client: MccClient;
 
   // node rate limiting control
-  requestTime: number = 0; //How is this used?
-  requestsPerSecond: number = 0;
+  requestTime = 0;
+  requestsPerSecond = 0;
 
   chainConfig: ChainConfiguration;
 
-  transactionsQueue = new Array<Attestation>();
-  transactionsPriorityQueue = new PriorityQueue<Attestation>();
+  attestationsQueue = new Array<Attestation>();
+  attestationsPriorityQueue = new PriorityQueue<Attestation>();
 
-  transactionsProcessing = new Array<Attestation>();
+  attestationProcessing = new Array<Attestation>();
 
   indexedQueryManager: IndexedQueryManager;
 
@@ -50,7 +50,7 @@ export class ChainNode {
 
     //const confirmations = AttestationRoundManager.attestationConfigManager.getSourceHandlerConfig( )
 
-    let options: IndexedQueryManagerOptions = {
+    const options: IndexedQueryManagerOptions = {
       chainType: chainType,
       dbService: AttestationRoundManager.dbServiceIndexer,
       maxValidIndexerDelaySec: chainConfiguration.maxValidIndexerDelaySec,
@@ -60,7 +60,7 @@ export class ChainNode {
       },
 
       windowStartTime: (roundId: number) => {
-        let roundStartTime = Math.floor(AttestationRoundManager.epochSettings.getRoundIdTimeStartMs(roundId) / 1000);
+        const roundStartTime = Math.floor(AttestationRoundManager.epochSettings.getRoundIdTimeStartMs(roundId) / 1000);
         const queryWindowsInSec = AttestationRoundManager.attestationConfigManager.getSourceHandlerConfig(
           toSourceId(chainConfiguration.name),
           roundId
@@ -69,7 +69,7 @@ export class ChainNode {
       },
 
       UBPCutoffTime: (roundId: number) => {
-        let roundStartTime = Math.floor(AttestationRoundManager.epochSettings.getRoundIdTimeStartMs(roundId) / 1000);
+        const roundStartTime = Math.floor(AttestationRoundManager.epochSettings.getRoundIdTimeStartMs(roundId) / 1000);
         const UBPUnconfirmedWindowInSec = AttestationRoundManager.attestationConfigManager.getSourceHandlerConfig(
           toSourceId(chainConfiguration.name),
           roundId
@@ -85,8 +85,11 @@ export class ChainNode {
     this.addRequestCount();
   }
 
+  /**
+   * the number of attestation in process or to be processed
+   */
   getLoad(): number {
-    return this.transactionsQueue.length + this.transactionsProcessing.length + this.transactionsPriorityQueue.length();
+    return this.attestationsQueue.length + this.attestationProcessing.length + this.attestationsPriorityQueue.length();
   }
 
   // ?????
@@ -109,51 +112,46 @@ export class ChainNode {
     }
   }
 
-  /**
-   *
-   * @returns
-   */
-  canProcess(): boolean {
-    return this.canAddRequests() && this.transactionsProcessing.length < this.chainConfig.maxProcessingTransactions;
+  canProcess() {
+    return this.canAddRequests() && this.attestationProcessing.length < this.chainConfig.maxProcessingTransactions;
   }
 
   /**
    * Adds the attestation into processing queue waiting for validation
    * @param attestation
    */
-  queue(attestation: Attestation): void {
-    //this.chainManager.logger.info(`chain ${this.chainName} queue ${attestation.data.id}  (${this.transactionsQueue.length}++,${this.transactionsProcessing.length},${this.transactionsDone.length})`);
+  queue(attestation: Attestation) {
+    //this.chainManager.logger.info(`chain ${this.chainName} queue ${attestation.data.id} (${this.attestationQueue.length}++,${this.attestationProcessing.length},${this.transactionsDone.length})`);
     attestation.status = AttestationStatus.queued;
-    this.transactionsQueue.push(attestation);
+    this.attestationsQueue.push(attestation);
   }
 
   /**
-   * puts attestation from processing queue into into delay queue - queue that can be processed in second part of commit epoch
-   *
-   * startTime is delay time in sec
-   *
-   * what this function does is to make sure there is a mechanism that will run startNext if nothing is in process
+   * Puts attestation from processing queue into into delay queue - queue that can be processed in second part of commit epoch.
+   * It makes sure there is a mechanism that will run startNext if nothing is in process
+   * @param attestation
+   * @param startTime delay time in sec
    */
-  delayQueue(attestation: Attestation, startTime: number): void {
+  delayQueue(attestation: Attestation, startTime: number) {
     switch (attestation.status) {
       case AttestationStatus.queued:
-        arrayRemoveElement(this.transactionsQueue, attestation);
+        arrayRemoveElement(this.attestationsQueue, attestation);
         break;
       case AttestationStatus.processing:
-        arrayRemoveElement(this.transactionsProcessing, attestation);
+        arrayRemoveElement(this.attestationProcessing, attestation);
         break;
     }
 
-    this.transactionsPriorityQueue.push(attestation, startTime); //Priority or Delay ?
+    this.attestationsPriorityQueue.push(attestation, startTime);
 
     this.updateDelayQueueTimer();
   }
 
   updateDelayQueueTimer(): void {
-    if (this.transactionsPriorityQueue.length() == 0) return;
+    if (this.attestationsPriorityQueue.length() == 0) return;
 
     // set time to first time in queue
-    const firstStartTime = this.transactionsPriorityQueue.peekKey()!;
+    const firstStartTime = this.attestationsPriorityQueue.peekKey()!;
 
     // if start time has passed then just call startNext (no timeout is needed)
     if (firstStartTime < getTimeMilli()) {
@@ -202,7 +200,7 @@ export class ChainNode {
     }
 
     //this.addRequestCount();
-    this.transactionsProcessing.push(attestation);
+    this.attestationProcessing.push(attestation);
 
     attestation.status = AttestationStatus.processing;
     attestation.processStartTime = now;
@@ -223,7 +221,7 @@ export class ChainNode {
 
           attestation.reverification = true;
 
-          // actualk time when attesttion will be rechecked
+          // actual time when attesttion will be rechecked
           const startTimeMs =
             AttestationRoundManager.epochSettings.getRoundIdRevealTimeStartMs(attestation.roundId) -
             AttestationRoundManager.attestationConfigManager.config.commitTime * 1000 -
@@ -271,7 +269,7 @@ export class ChainNode {
   }
 
   /**
-   * Sets the Attestation status and adds varificationData to the attestation
+   * Sets the Attestation status and adds verificationData to the attestation
    * @param attestation
    * @param status
    * @param verificationData
@@ -287,7 +285,7 @@ export class ChainNode {
     //this.chainManager.logger.info(`chain ${this.chainName} processed ${attestation.data.id} status=${status}  (${this.transactionsQueue.length},${this.transactionsProcessing.length},${this.transactionsDone.length}++)`);
 
     // move into processed
-    arrayRemoveElement(this.transactionsProcessing, attestation);
+    arrayRemoveElement(this.attestationProcessing, attestation);
 
     // todo: save transaction data
 
@@ -302,14 +300,15 @@ export class ChainNode {
   }
 
   /**
-   *Check if possible the attestation is processed, otherwise it is added  the queue
+   *If possible the attestation is processed, otherwise it is added the queue
    * @param attestation
    */
   validate(attestation: Attestation): void {
-    //this.chainManager.logger.info(`chain ${this.chainName} validate ${attestation.data.getHash()}`);
+    //this.chainManager.logger.info(`chain ${this.chainName} validate ${transaction.data.getHash()}`);
 
-    // check if attestation can be added into processing
+    // check if transaction can be added into processing
     if (this.canProcess()) {
+      // eslint-disable-next-line
       this.process(attestation);
     } else {
       this.queue(attestation);
@@ -317,13 +316,12 @@ export class ChainNode {
   }
 
   /**
-   * Processes the next attestation in the queue
-   * @returns
+   * Processes the next attestation in the priority queue if expected startTime of is reached otherwise the next attestation in the queue
    */
   startNext(): void {
     try {
       if (!this.canProcess()) {
-        if (this.transactionsProcessing.length === 0) {
+        if (this.attestationProcessing.length === 0) {
           this.chainManager.logger.debug(` # startNext heartbeat`);
           setTimeout(() => {
             this.startNext();
@@ -335,23 +333,25 @@ export class ChainNode {
       }
 
       // check if there is queued priority transaction to be processed
-      while (this.transactionsPriorityQueue.length() && this.canProcess()) {
+      while (this.attestationsPriorityQueue.length() && this.canProcess()) {
         // check if queue start time is reached
-        const startTime = this.transactionsPriorityQueue.peekKey()!;
+        const startTime = this.attestationsPriorityQueue.peekKey()!;
         if (getTimeMilli() < startTime) break;
 
         // take top and process it then start new top timer
-        const attestation = this.transactionsPriorityQueue.pop();
+        const attestation = this.attestationsPriorityQueue.pop();
         this.updateDelayQueueTimer();
 
+        // eslint-disable-next-line
         this.process(attestation!);
       }
 
       // check if there is any queued transaction to be processed
-      while (this.transactionsQueue.length && this.canProcess()) {
-        const attestation = this.transactionsQueue.shift();
+      while (this.attestationsQueue.length && this.canProcess()) {
+        const tx = this.attestationsQueue.shift();
 
-        this.process(attestation!);
+        // eslint-disable-next-line
+        this.process(tx!);
       }
     } catch (error) {
       logException(error, `ChainNode::startNext`);

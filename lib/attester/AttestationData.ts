@@ -5,7 +5,7 @@ import { AttestationType } from "../verification/generated/attestation-types-enu
 import { SourceId } from "../verification/sources/sources";
 
 /**
- * Class in which augmentated attestation request is read from an emited attestation request.
+ * Class in which augmented attestation request is read from an emitted attestation request.
  */
 export class AttestationData {
   // event parameters

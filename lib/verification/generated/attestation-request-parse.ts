@@ -64,7 +64,7 @@ function fromUnprefixedBytes(bytes: string, type: string, size: number) {
  */
 export function getAttestationTypeAndSource(bytes: string) {
   try {
-    let input = unPrefix0x(bytes);
+    const input = unPrefix0x(bytes);
     if (!bytes || bytes.length < 12) {
       throw new AttestationRequestParseError("Cannot read attestation type and source id");
     }
@@ -81,7 +81,7 @@ export function parsePayment(bytes: string): ARPayment {
   if (!bytes) {
     throw new AttestationRequestParseError("Empty attestation request");
   }
-  let input = unPrefix0x(bytes);
+  const input = unPrefix0x(bytes);
   if (input.length != 144) {
     throw new AttestationRequestParseError("Incorrectly formatted attestation request");
   }
@@ -100,7 +100,7 @@ export function parseBalanceDecreasingTransaction(bytes: string): ARBalanceDecre
   if (!bytes) {
     throw new AttestationRequestParseError("Empty attestation request");
   }
-  let input = unPrefix0x(bytes);
+  const input = unPrefix0x(bytes);
   if (input.length != 142) {
     throw new AttestationRequestParseError("Incorrectly formatted attestation request");
   }
@@ -118,7 +118,7 @@ export function parseConfirmedBlockHeightExists(bytes: string): ARConfirmedBlock
   if (!bytes) {
     throw new AttestationRequestParseError("Empty attestation request");
   }
-  let input = unPrefix0x(bytes);
+  const input = unPrefix0x(bytes);
   if (input.length != 76) {
     throw new AttestationRequestParseError("Incorrectly formatted attestation request");
   }
@@ -134,7 +134,7 @@ export function parseReferencedPaymentNonexistence(bytes: string): ARReferencedP
   if (!bytes) {
     throw new AttestationRequestParseError("Empty attestation request");
   }
-  let input = unPrefix0x(bytes);
+  const input = unPrefix0x(bytes);
   if (input.length != 252) {
     throw new AttestationRequestParseError("Incorrectly formatted attestation request");
   }
@@ -155,7 +155,7 @@ export function parseTrustlineIssuance(bytes: string): ARTrustlineIssuance {
   if (!bytes) {
     throw new AttestationRequestParseError("Empty attestation request");
   }
-  let input = unPrefix0x(bytes);
+  const input = unPrefix0x(bytes);
   if (input.length != 116) {
     throw new AttestationRequestParseError("Incorrectly formatted attestation request");
   }
@@ -169,7 +169,7 @@ export function parseTrustlineIssuance(bytes: string): ARTrustlineIssuance {
 }
 
 export function parseRequest(bytes: string): ARType {
-  let { attestationType } = getAttestationTypeAndSource(bytes);
+  const { attestationType } = getAttestationTypeAndSource(bytes);
   switch (attestationType) {
     case AttestationType.Payment:
       return parsePayment(bytes);
