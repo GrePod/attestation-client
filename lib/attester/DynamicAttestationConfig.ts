@@ -9,9 +9,9 @@ import { AttesterClientConfiguration } from "./AttesterClientConfiguration";
 
 const fs = require("fs");
 
-// Unnecessary complications??
+
 /**
- * Weight presents the difficulty of validating the attestation depands on the attestation type and source
+ * Weight presents the difficulty of validating the attestation depanding on the attestation type and source
  */
 export class SourceHandlerTypeConfig {
   // Weight presents the difficulty of validating the attestation depending on the attestation type and source

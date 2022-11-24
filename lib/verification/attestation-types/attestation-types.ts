@@ -45,6 +45,10 @@ export enum VerificationStatus {
 
 /**
  * Interface for a verification of a request of type R with response of typo T.
+ * The validity of the request stored in status.
+ */
+/**
+ * Interface for a verification of a request of type R with response of typo T.
  * The validity of the request is stored in status.
  */
 export interface Verification<R, T> {

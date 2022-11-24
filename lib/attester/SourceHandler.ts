@@ -5,7 +5,7 @@ import { AttestationRoundManager } from "./AttestationRoundManager";
 import { SourceHandlerConfig } from "./DynamicAttestationConfig";
 
 /**
- * ??A protocol for providing verificationData to an attestation??
+ * A protocol for providing verificationData to an attestation??
  */
 export interface EventValidateAttestation {
   (attestation: Attestation): void;
