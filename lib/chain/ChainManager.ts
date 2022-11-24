@@ -5,7 +5,7 @@ import { SourceId } from "../verification/sources/sources";
 import { ChainNode } from "./ChainNode";
 
 /**
- * Class that stores the assignation of a ChainNode to each chain type
+ * Class that stores the assignments of a ChainNode to each chain type
  */
 @Managed()
 export class ChainManager {
@@ -25,12 +25,12 @@ export class ChainManager {
   }
 
   /**
-   * ??Initalizes?? the validation of the attestation
+   * Starts attestation validation for given @param sourceId
    * @param sourceId
    * @param attestation
    * @returns
    */
-  validateTransaction(sourceId: SourceId, attestation: Attestation): void | undefined {
+  validateAttestation(sourceId: SourceId, attestation: Attestation) {
     const node = this.nodes.get(sourceId);
 
     if (!node) {
@@ -38,7 +38,7 @@ export class ChainManager {
       //
       return undefined;
     }
-    node.validate(attestation);
-    // return node.validate(attestation); //This returns void!!!!!
+
+    return node.validate(attestation);
   }
 }

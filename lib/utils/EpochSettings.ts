@@ -3,19 +3,20 @@ import { toBN } from "@flarenetwork/mcc";
 import { getTimeSec } from "./internetTime";
 
 /**
- * Class for storing the settings of epochs
- * For the connection between rounds and epochse see Attestation-protocol.md
+ * Class for storing the settings of epochs. Current length of an epoch is 90 seconds.
+ * For the connection between rounds and epoches see Attestation-protocol.md
+ * Values for construction must be given in seconds.
  */
 export class EpochSettings {
-  private _firstEpochStartTime: BN; // in seconds
-  private _epochPeriod: BN; // in seconds
+  private _firstEpochStartTime: BN; // in milliseconds
+  private _epochPeriod: BN; // in milliseconds
 
   private _firstEpochId: BN = toBN(0);
 
   // all values are in seconds
-  constructor(_firstEpochStartTime: BN, _epochPeriod: BN) {
-    this._firstEpochStartTime = _firstEpochStartTime.mul(toBN(1000));
-    this._epochPeriod = _epochPeriod.mul(toBN(1000));
+  constructor(_firstEpochStartTimeSec: BN, _epochPeriodSec: BN) {
+    this._firstEpochStartTime = _firstEpochStartTimeSec.mul(toBN(1000));
+    this._epochPeriod = _epochPeriodSec.mul(toBN(1000));
   }
 
   getEpochLengthMs(): BN {
@@ -28,48 +29,37 @@ export class EpochSettings {
   }
 
   /**
-   * Gets the id of the current epoch. It is the same as the id of the round that is currently in the request phase   *
+   * Gets the id of the current epoch. It is the same as the id of the round that is currently in the request phase
    */
   getCurrentEpochId(): BN {
     return this.getEpochIdForTime(toBN(getTimeSec() * 1000));
   }
 
-  // // in seconds
-  // getEpochTimeStart(): BN {
-  //   const id: BN = this.getCurrentEpochId().add(toBN(1)).add(this._firstEpochId);
-  //   return this._firstEpochStartTime.add(id.mul(this._epochPeriod));
-  // }
-
-  // // in seconds
-  // getEpochTimeEnd(): BN {
-  //   return this.getEpochTimeStart().add(this._epochPeriod);
-  // }
-
   /**
    * Gets the start time of the round in milliseconds. The round starts in the request phase.
    */
-  getRoundIdTimeStartMs(round: BN | number): number {
-    return this._firstEpochStartTime.add(toBN(round).mul(this._epochPeriod)).toNumber(); // + this._epochPeriod.toNumber();
+  getRoundIdTimeStartMs(id: BN | number): number {
+    return this._firstEpochStartTime.add(toBN(id).mul(this._epochPeriod)).toNumber(); // + this._epochPeriod.toNumber();
   }
 
   /**
    * Gets the end time of the epoch in milliseconds
    */
-  getEpochIdTimeEndMs(epochid: BN | number): number {
-    return this.getRoundIdTimeStartMs(epochid) + this._epochPeriod.toNumber();
+  getEpochIdTimeEndMs(id: BN | number): number {
+    return this.getRoundIdTimeStartMs(id) + this._epochPeriod.toNumber();
   }
 
   /**
    * Gets the start time of the commit phase of the round in milliseconds
    */
-  getRoundIdCommitTimeStartMs(round: BN | number): number {
-    return this.getRoundIdTimeStartMs(round) + this._epochPeriod.toNumber();
+  getRoundIdCommitTimeStartMs(id: BN | number): number {
+    return this.getRoundIdTimeStartMs(id) + this._epochPeriod.toNumber();
   }
 
   /**
    * Gets the start time of the Reveal phase of the round in milliseconds
    */
-  getRoundIdRevealTimeStartMs(round: number): number {
-    return this.getRoundIdCommitTimeStartMs(round) + this._epochPeriod.toNumber();
+  getRoundIdRevealTimeStartMs(id: number): number {
+    return this.getRoundIdCommitTimeStartMs(id) + this._epochPeriod.toNumber();
   }
 }
